@@ -49,6 +49,8 @@ import           Pos.DB                           (MonadGState (..), gsIsBootstr
 import           Pos.DB.Class                     (MonadBlockDBGeneric (..),
                                                    MonadBlockDBGenericWrite (..),
                                                    MonadDB (..), MonadDBRead (..))
+import           Pos.GState                       (HasGStateContext (..),
+                                                   getGStateImplicitReal)
 import           Pos.Infra.Configuration          (HasInfraConfiguration)
 import           Pos.KnownPeers                   (MonadFormatPeers (..),
                                                    MonadKnownPeers (..))
@@ -108,6 +110,9 @@ realModeToAuxx = withReaderT acRealModeContext
 ----------------------------------------------------------------------------
 -- Boilerplate instances
 ----------------------------------------------------------------------------
+
+instance HasGStateContext AuxxContext where
+    gStateContext = getGStateImplicitReal
 
 instance HasSscContext AuxxSscType AuxxContext where
     sscContext = acRealModeContext_L . sscContext

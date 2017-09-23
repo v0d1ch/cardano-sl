@@ -70,8 +70,8 @@ import           Pos.Ssc.Extra                    (SscMemTag, SscState, mkSscSta
 import           Pos.Ssc.GodTossing               (SscGodTossing)
 import           Pos.Ssc.GodTossing.Configuration (HasGtConfiguration)
 import           Pos.Txp                          (GenericTxpLocalData, MempoolExt,
-                                                   TxpGlobalSettings, TxpHolderTag,
-                                                   mkTxpLocalData)
+                                                   MonadTxpLocal (..), TxpGlobalSettings,
+                                                   TxpHolderTag, mkTxpLocalData)
 import           Pos.Update.Configuration         (HasUpdateConfiguration)
 import           Pos.Update.Context               (UpdateContext, mkUpdateContext)
 import           Pos.Util                         (HasLens (..), Some, newInitFuture,
@@ -377,6 +377,10 @@ instance Monad m => MonadAddresses (BlockGenMode ext m) where
     getNewAddress = pure
 
 type instance MempoolExt (BlockGenMode ext m) = ext
+
+instance (MonadTxpLocal m) => MonadTxpLocal (BlockGenMode ext m) where
+    txpNormalize = lift $ txpNormalize
+    txpProcessTx = lift . txpProcessTx
 
 ----------------------------------------------------------------------------
 -- Utilities

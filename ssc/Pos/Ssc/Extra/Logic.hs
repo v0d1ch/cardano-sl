@@ -43,7 +43,7 @@ import           Pos.DB                   (MonadBlockDBGeneric, MonadDBRead, Mon
                                            SomeBatchOp, gsAdoptedBVData)
 import           Pos.DB.GState.Common     (getTipHeaderGeneric)
 import           Pos.Exception            (assertionFailed)
-import           Pos.Lrc.Context          (LrcContext, lrcActionOnEpochReason)
+import           Pos.Lrc.Context          (HasLrcContext, lrcActionOnEpochReason)
 import           Pos.Lrc.Types            (RichmenStakes)
 import           Pos.Reporting            (MonadReporting, reportError)
 import           Pos.Slotting.Class       (MonadSlots)
@@ -114,7 +114,7 @@ sscCalculateSeed
        , MonadDBRead m
        , SscGStateClass ssc
        , MonadReader ctx m
-       , HasLens LrcContext ctx LrcContext
+       , HasLrcContext ctx
        , MonadIO m
        , WithLogger m )
     => EpochIndex
@@ -149,7 +149,7 @@ sscNormalize
        , MonadSscMem ssc ctx m
        , SscLocalDataClass ssc
        , MonadReader ctx m
-       , HasLens LrcContext ctx LrcContext
+       , HasLrcContext ctx
        , SscHelpersClass ssc
        , WithLogger m
        , MonadIO m
@@ -198,7 +198,7 @@ sscResetLocal = do
 -- 'MonadRandom' is needed for crypto (@neongreen hopes).
 type SscGlobalVerifyMode ssc ctx m =
     (MonadSscMem ssc ctx m, SscHelpersClass ssc, SscGStateClass ssc,
-     MonadReader ctx m, HasLens LrcContext ctx LrcContext,
+     MonadReader ctx m, HasLrcContext ctx,
      MonadDBRead m, MonadGState m, WithLogger m, MonadReporting ctx m,
      MonadIO m, Rand.MonadRandom m)
 
@@ -327,9 +327,11 @@ sscVerifyBlocks blocks = do
 -- Utils
 ----------------------------------------------------------------------------
 
-getRichmenFromLrc
-    :: (MonadIO m, MonadDBRead m, MonadReader ctx m, HasLens LrcContext ctx LrcContext)
-    => Text -> EpochIndex -> m RichmenStakes
+getRichmenFromLrc ::
+       (MonadIO m, MonadDBRead m, MonadReader ctx m, HasLrcContext ctx)
+    => Text
+    -> EpochIndex
+    -> m RichmenStakes
 getRichmenFromLrc fname epoch =
     lrcActionOnEpochReason
         epoch
