@@ -461,7 +461,7 @@ withLinearFeePolicy action = view tcdFeePolicy >>= \case
 
 -- | Prepare transaction considering fees
 prepareTxWithFee
-    :: (HasConfiguration, Monad m)
+    :: (HasConfiguration, MonadAddresses m)
     => Utxo
     -> TxOutputs
     -> TxCreator m TxRaw
@@ -471,7 +471,7 @@ prepareTxWithFee utxo outputs = withLinearFeePolicy $ \linearPolicy ->
 -- | Compute, how much fees we should pay to send money to given
 -- outputs
 computeTxFee
-    :: (HasConfiguration, Monad m)
+    :: (HasConfiguration, MonadAddresses m)
     => Utxo
     -> TxOutputs
     -> TxCreator m TxFee
@@ -527,7 +527,7 @@ computeTxFee utxo outputs = do
 -- valid).
 -- To possibly find better solutions we iterate for several times more.
 stabilizeTxFee
-    :: forall m. (HasConfiguration, Monad m)
+    :: forall m. (HasConfiguration, MonadAddresses m)
     => TxSizeLinear
     -> Utxo
     -> TxOutputs
@@ -548,8 +548,9 @@ stabilizeTxFee linearPolicy utxo outputs = do
     stabilizeTxFeeDo (_, 0) _ = pure Nothing
     stabilizeTxFeeDo (isSecondStage, attempt) expectedFee = do
         txRaw <- prepareTxRaw utxo outputs expectedFee
+        fakeChangeAddr <- lift . lift $ getFakeChangeAddress
         txMinFee <- txToLinearFee linearPolicy $
-                    createFakeTxFromRawTx txRaw
+                    createFakeTxFromRawTx fakeChangeAddr txRaw
 
         let txRawWithFee = S.Min $ S.Arg expectedFee txRaw
         let iterateDo step = stabilizeTxFeeDo step txMinFee
@@ -572,10 +573,9 @@ txToLinearFee linearPolicy =
 
 -- | Function is used to calculate intermediate fee amounts
 -- when forming a transaction
-createFakeTxFromRawTx :: HasConfiguration => TxRaw -> TxAux
-createFakeTxFromRawTx TxRaw{..} =
-    let fakeAddr = txOutAddress . toaOut . NE.head $ trOutputs
-        fakeOutMB
+createFakeTxFromRawTx :: HasConfiguration => Address -> TxRaw -> TxAux
+createFakeTxFromRawTx fakeAddr TxRaw{..} =
+    let fakeOutMB
             | trRemainingMoney == mkCoin 0 = Nothing
             | otherwise =
                 Just $

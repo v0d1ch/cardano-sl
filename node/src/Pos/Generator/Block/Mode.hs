@@ -39,8 +39,9 @@ import           Pos.Configuration           (HasNodeConfiguration)
 import           Pos.Core                    (Address, GenesisWStakeholders (..),
                                               HasConfiguration, HasPrimaryKey (..),
                                               IsHeader, SlotId (..), Timestamp,
+                                              makePubKeyAddressBoot,
                                               epochOrSlotToSlot, getEpochOrSlot)
-import           Pos.Crypto                  (SecretKey)
+import           Pos.Crypto                  (SecretKey, keyGen)
 import           Pos.DB                      (DBSum, MonadBlockDBGeneric (..),
                                               MonadBlockDBGenericWrite (..), MonadDB,
                                               MonadDBRead)
@@ -364,9 +365,10 @@ instance MonadBlockGenBase m => MonadBListener (BlockGenMode m) where
     onApplyBlocks = onApplyBlocksStub
     onRollbackBlocks = onRollbackBlocksStub
 
-instance Monad m => MonadAddresses (BlockGenMode m) where
+instance MonadIO m => MonadAddresses (BlockGenMode m) where
     type AddrData (BlockGenMode m) = Address
     getNewAddress = pure
+    getFakeChangeAddress = makePubKeyAddressBoot . fst <$> liftIO keyGen
 
 ----------------------------------------------------------------------------
 -- Utilities

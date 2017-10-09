@@ -23,8 +23,10 @@ import           Control.Lens                     (makeLensesWith)
 import           Control.Monad.Morph              (hoist)
 import           Control.Monad.Reader             (withReaderT)
 import           Mockable                         (Production)
+import           Serokell.Data.Memory.Units       (Byte)
 import           System.Wlog                      (HasLoggerName (..))
 
+import           Pos.Binary                       (biSize)
 import           Pos.Block.BListener              (MonadBListener (..))
 import           Pos.Block.Core                   (Block, BlockHeader)
 import           Pos.Block.Slog                   (HasSlogContext (..),
@@ -39,7 +41,7 @@ import           Pos.Communication                (NodeId)
 import           Pos.Context                      (HasNodeContext (..), unGenesisUtxo)
 import           Pos.Core                         (HasConfiguration, HasPrimaryKey (..),
                                                    IsHeader)
-import           Pos.Crypto                       (PublicKey)
+import           Pos.Crypto                       (PublicKey, keyGen)
 import           Pos.DB                           (MonadGState (..))
 import           Pos.DB.Class                     (MonadBlockDBGeneric (..),
                                                    MonadBlockDBGenericWrite (..),
@@ -216,3 +218,13 @@ instance MonadFormatPeers AuxxMode where
 instance HasConfiguration => MonadAddresses AuxxMode where
     type AddrData AuxxMode = PublicKey
     getNewAddress = makePubKeyAddressAuxx
+    getFakeChangeAddress = do
+        pk <- fst <$> keyGen
+        let maxBootAddr, maxNonBootAddr :: Byte
+            maxBootAddr = 43 -- maximal size of bootstrap era address
+            maxNonBootAddr = 78 -- maximal size of single key distribution address
+        addr <- makePubKeyAddressAuxx pk
+        let addrSize = biSize addr
+        let isOk = addrSize == maxBootAddr || addrSize == maxNonBootAddr
+        if | isOk -> return addr
+           | otherwise -> getFakeChangeAddress

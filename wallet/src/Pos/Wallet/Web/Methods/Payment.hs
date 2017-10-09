@@ -10,6 +10,7 @@ module Pos.Wallet.Web.Methods.Payment
 
 import           Universum
 
+import qualified Data.ByteArray                   as DBA
 import qualified Data.List.NonEmpty               as NE
 import           Formatting                       (sformat, (%))
 import qualified Formatting                       as F
@@ -22,9 +23,11 @@ import           Pos.Client.Txp.History           (TxHistoryEntry (..))
 import           Pos.Client.Txp.Util              (computeTxFee, runTxCreator)
 import           Pos.Communication                (SendActions (..), prepareMTx)
 import           Pos.Configuration                (HasNodeConfiguration)
-import           Pos.Core                         (Coin, HasConfiguration, addressF,
-                                                   getCurrentTimestamp)
-import           Pos.Crypto                       (PassPhrase, hash, withSafeSigners)
+import           Pos.Core                         (Coin, HasConfiguration,
+                                                   IsBootstrapEraAddr (..), addressF,
+                                                   deriveLvl2KeyPair, getCurrentTimestamp)
+import           Pos.Crypto                       (PassPhrase, SecretKey (..), hash,
+                                                   keyGen, mkEncSecret, withSafeSigners)
 import           Pos.Infra.Configuration          (HasInfraConfiguration)
 import           Pos.Ssc.GodTossing.Configuration (HasGtConfiguration)
 import           Pos.Txp                          (TxFee (..), Utxo, _txOutputs)
@@ -128,6 +131,20 @@ instance
     getNewAddress (accId, passphrase) = do
         clientAddress <- L.newAddress RandomSeed passphrase accId
         decodeCTypeOrFail (cadId clientAddress)
+    -- We are creating a sample HD address here. It has the same
+    -- length (76) as the biggest one created by Daedalus.
+    getFakeChangeAddress = do
+        let passphrase = DBA.replicate 10 255
+        SecretKey sk <- snd <$> keyGen
+        encSK <- mkEncSecret passphrase sk
+        case deriveLvl2KeyPair
+                 (IsBootstrapEraAddr True)
+                 passphrase
+                 encSK
+                 maxBound
+                 maxBound of
+            Nothing        -> throwM $ InternalError "getFakeChangeAddress failed"
+            Just (addr, _) -> return addr
 
 sendMoney
     :: MonadWalletWebMode m
