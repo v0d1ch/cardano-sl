@@ -3026,11 +3026,15 @@ self: {
           description = "An either monad transformer";
           license = stdenv.lib.licenses.bsd3;
         }) {};
-      ekg-core = callPackage ({ base, containers, ghc-prim, mkDerivation, stdenv, text, unordered-containers }:
+      ekg-core = callPackage ({ base, containers, fetchgit, ghc-prim, mkDerivation, stdenv, text, unordered-containers }:
       mkDerivation {
           pname = "ekg-core";
           version = "0.1.1.2";
-          sha256 = "35eb78e4cdabab2562ddf477bf55fa2cf1c0489984c6adb360ef187b6979f805";
+          src = fetchgit {
+            url = "https://github.com/tibbe/ekg-core.git";
+            sha256 = "07lzg42gn56jpbm781h6dh9yprdb8iw7hcdkmz92pj0v43j4c5bs";
+            rev = "69400b69422db44e00152db2c80f32c1b9978092";
+          };
           libraryHaskellDepends = [
             base
             containers

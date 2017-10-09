@@ -22,6 +22,12 @@ packages:
 - explorer
 
 - location:
+    git: https://github.com/tibbe/ekg-core.git
+    # Contains space leak fix for System.Metric.Label.set
+    # See https://github.com/tibbe/ekg-core/pull/21
+    commit: 69400b69422db44e00152db2c80f32c1b9978092
+  extra-dep: true
+- location:
     git: https://github.com/serokell/time-units.git
     commit: 6c3747c1ac794f952de996dd7ba8a2f6d63bf132
   extra-dep: true
