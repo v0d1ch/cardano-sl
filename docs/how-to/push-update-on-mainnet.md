@@ -24,13 +24,7 @@ Prerequisites
    to have keys for majority of stake. In mainnet we have 7 core nodes
    with equal stake, so 4 keys should be enough.
 2. Access to the S3 bucket
-3. Installers corresponding to software version we're pushing to cluster
-   - Those are two executables (exe for win, pkg for mac) which are to
-     be provided by QA (after QA procedures passed). They are
-     installers provided by our CI.
-   - Advice: after providing installers, ask QA to confirm hashes are
-     same, we don't want to ship users incorrect installers to users.
-4. Software version
+3. Software version
    - Single integer, must be greater by 1 than the last confirmed
      version. Initially `csl-daedalus` application has version 0. The
      first update should have version 1, the next one 2, etc. If you
@@ -40,6 +34,17 @@ Prerequisites
      `applicationVersion` field. When you propose an update to version
      X, make sure that all attached installers use configuration with
      `applicationVersion` set to `X`.
+4. Installers corresponding to software version we're pushing to cluster
+   - Those are two executables (exe for win, pkg for mac) which are to
+     be provided by QA (after QA procedures passed). They are
+     installers provided by our CI.
+   - Advice: after providing installers, ask QA to confirm hashes are
+     same, we don't want to ship users incorrect installers to users.
+   - IMPORTANT: pushing an installer of version N with an update with version 
+     M > N will result in the infinite installer loop (Daedalus thinks 
+     it is N, it downloads M, updates to it, but N is installed repeats), so
+     versions should be double-checked. 
+
 
 Proposing the update
 ====================
