@@ -66,8 +66,8 @@ import           Pos.Core                         (GenesisWStakeholders, HasConf
                                                    HeaderHash, headerHash, prevBlockL)
 import           Pos.Crypto.Hashing               (hashHexF)
 import           Pos.Generator.Block              (BlockGenParams (..), BlockTxpGenMode,
-                                                   MonadBlockGen, TxGenParams (..),
-                                                   genBlocks)
+                                                   MonadBlockGen, MonadBlockGenInit,
+                                                   TxGenParams (..), genBlocks)
 import           Pos.GState.Context               (withClonedGState)
 import           Pos.Ssc.GodTossing.Configuration (HasGtConfiguration)
 import           Pos.Ssc.GodTossing.Type          (SscGodTossing)

@@ -4,7 +4,7 @@ module Pos.GState.Context
        ( GStateContext (..)
        , HasGStateContext (..)
 
-       , getGStateImplicitReal
+       , getGStateImplicit
        , cloneGStateContext
        , withClonedGState
        ) where
@@ -18,7 +18,6 @@ import           System.Wlog            (WithLogger)
 import           Pos.Block.Slog.Context (cloneSlogGState)
 import           Pos.Block.Slog.Types   (HasSlogGState (..), SlogGState)
 import           Pos.DB.Pure            (cloneDBPure)
-import           Pos.DB.Rocks           (NodeDBs)
 import           Pos.DB.Sum             (DBSum (..))
 import           Pos.Lrc.Context        (HasLrcContext, LrcContext, cloneLrcContext)
 import           Pos.Slotting           (HasSlottingVar, SlottingVar, cloneSlottingVar,
@@ -40,34 +39,33 @@ data GStateContext = GStateContext
 
 makeClassy ''GStateContext
 
+--class HasGStateContext ctx where
+--    gStateContext :: Getter ctx GStateContext
+
 instance HasSlogGState GStateContext where
     slogGState = gscSlogGState
 
--- | Constructs 'GStateContext' out of real database ('NodeDBs') and
--- other components if they are avaiblae. It's hacky (don't set gscDB
--- to anything except for NodeDB).
-getGStateImplicitReal ::
+-- | Constructs 'GStateContext' out of real components. Basically a
+-- vertical lens sum.
+getGStateImplicit ::
        ( HasSlottingVar ctx
        , HasSlogGState ctx
-       , HasLens' ctx NodeDBs
+       , HasLens' ctx DBSum
        , HasLrcContext ctx)
     => Lens' ctx GStateContext
-getGStateImplicitReal = lens getter setter
+getGStateImplicit = lens getter setter
   where
     getter ctx =
         GStateContext
-            (RealDB $ ctx ^. (lensOf @NodeDBs))
+            (ctx ^. (lensOf @DBSum))
             (ctx ^. (lensOf @LrcContext))
             (ctx ^. slogGState)
             (ctx ^. slottingVar)
     setter ctx GStateContext{..} =
-        let nodeDBs' = case _gscDB of
-              RealDB n -> n
-              PureDB _ -> error "getGStateImplicitReal: got pure db on set"
-        in ctx & (lensOf @NodeDBs) .~ nodeDBs'
-               & (lensOf @LrcContext) .~ _gscLrcContext
-               & slogGState .~ _gscSlogGState
-               & slottingVar .~ _gscSlottingVar
+        ctx & (lensOf @DBSum) .~ _gscDB
+            & (lensOf @LrcContext) .~ _gscLrcContext
+            & slogGState .~ _gscSlogGState
+            & slottingVar .~ _gscSlottingVar
 
 -- | Create a new 'GStateContext' which is a copy of the given context
 -- and can be modified independently.
